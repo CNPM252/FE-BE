@@ -1,0 +1,40 @@
+services:
+  # 1. PostgreSQL Database
+  postgres:
+    image: postgres:15-alpine
+    container_name: smart_postgres
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: root
+      POSTGRES_DB: smart_workstation
+    ports:
+      - "5432:5432"
+    volumes:
+      - pg_data:/var/lib/postgresql/data
+    restart: unless-stopped
+
+  # 2. Redis Cache
+  redis:
+    image: redis:7-alpine
+    container_name: smart_redis
+    ports:
+      - "6379:6379"
+    restart: unless-stopped
+
+  # 3. Eclipse Mosquitto (MQTT Broker)
+  mosquitto:
+    image: eclipse-mosquitto:2
+    container_name: smart_mosquitto
+    ports:
+      - "1883:1883"   # Cổng kết nối TCP cho Yolo:Bit và Spring Boot
+      - "9001:9001"   # Cổng WebSocket (nếu sau này bạn cần web gọi trực tiếp vào Broker)
+    volumes:
+      - ./mosquitto/config/mosquitto.conf:/mosquitto/config/mosquitto.conf
+      - mosquitto_data:/mosquitto/data
+      - mosquitto_log:/mosquitto/log
+    restart: unless-stopped
+
+volumes:
+  pg_data:
+  mosquitto_data:
+  mosquitto_log:
