@@ -4,8 +4,8 @@ services:
     image: postgres:15-alpine
     container_name: smart_postgres
     environment:
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: root
+      POSTGRES_USER: ${DB_USERNAME}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
       POSTGRES_DB: smart_workstation
     ports:
       - "5432:5432"
