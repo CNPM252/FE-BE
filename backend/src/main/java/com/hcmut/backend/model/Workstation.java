@@ -21,7 +21,7 @@ public class Workstation {
     private boolean autoDimEnabled = true;
 
     @Column(columnDefinition = "boolean default true")
-    private boolean audtoSleepEnabled = true;
+    private boolean autoSleepEnabled = true;
 
     private Integer manualLightLevel;
 
