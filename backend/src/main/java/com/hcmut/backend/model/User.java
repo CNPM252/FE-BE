@@ -19,6 +19,9 @@ public class User {
 
     private String passwordHash;
 
+    @Column(columnDefinition = "varchar(255) default 'ROLE_USER'")
+    private String role = "ROLE_USER";
+
     private String inAppName;
 
     @CreationTimestamp

@@ -3,7 +3,7 @@ package com.hcmut.backend.model;
 import jakarta.persistence.*;
 import lombok.Data;
 // import java.util.UUID;
-
+import com.fasterxml.jackson.annotation.JsonProperty;
 
 @Data
 @Entity
@@ -17,11 +17,13 @@ public class Workstation {
     @JoinColumn(name = "user_id", referencedColumnName = "id", unique = true)
     private User user;
 
-    @Column(columnDefinition = "boolean default true")
-    private boolean autoDimEnabled = true;
+    @JsonProperty("autoDimEnabled")
+    @Column(name = "auto_dim_enabled" ,columnDefinition = "boolean default true")
+    private Boolean autoDimEnabled = true;
 
-    @Column(columnDefinition = "boolean default true")
-    private boolean autoSleepEnabled = true;
+    @JsonProperty("autoSleepEnabled")
+    @Column(name = "auto_sleep_enabled", columnDefinition = "boolean default true")
+    private Boolean autoSleepEnabled = true;
 
     private Integer manualLightLevel;
 

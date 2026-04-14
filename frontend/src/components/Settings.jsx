@@ -1,23 +1,34 @@
 import { useState, useEffect } from 'react';
 
 export default function Settings() {
+
+  const [wsId] = useState(() => {
+    let id = localStorage.getItem('workstationId');
+    if (!id) {
+      id = 'guest_' + Math.random().toString(36).substring(2, 10);
+      localStorage.setItem('workstationId', id);
+    }
+    return id;
+  });
+
   // Trạng thái lưu dữ liệu cấu hình
   const [config, setConfig] = useState({
     distanceThresholdMin: 40,
     distanceThresholdMax: 70,
     maxDistance: 70,
     autoDimEnabled: true,
-    manualLightLevel: 50,
     autoSleepEnabled: true,
+    manualLightLevel: 50,
     sleepTimeoutMins: 3
   });
+
 
   // Trạng thái chờ tải dữ liệu
   const [loading, setLoading] = useState(true);
 
   // 1. GET API: Tự động chạy khi vừa mở trang Cài đặt
   useEffect(() => {
-    fetch('http://localhost:8080/api/workstations/WS-001/config')
+    fetch(`http://localhost:8080/api/workstations/${wsId}/config`)
         .then(response => response.json())
         .then(data => {
           setConfig(data);
@@ -27,7 +38,7 @@ export default function Settings() {
           console.error("Lỗi khi tải cấu hình từ Backend:", error);
           setLoading(false);
         });
-  }, []);
+  }, [wsId]);
 
   // Hàm xử lý khi người dùng gõ/kéo thanh trượt
   const handleChange = (e) => {
@@ -42,7 +53,7 @@ export default function Settings() {
   const handleSave = (e) => {
     e.preventDefault();
 
-    fetch('http://localhost:8080/api/workstations/WS-001/config', {
+    fetch(`http://localhost:8080/api/workstations/${wsId}/config`, {
       method: 'PUT',
       headers: {
         'Content-Type': 'application/json',

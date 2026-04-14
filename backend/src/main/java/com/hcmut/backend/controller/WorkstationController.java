@@ -19,6 +19,10 @@ public class WorkstationController {
 
     @GetMapping("/{workstationId}/config")
     public ResponseEntity<Workstation> getConfig(@PathVariable String workstationId){
+        if (workstationId.startsWith("guest_")){
+            return ResponseEntity.ok(workstationService.getGuestConfig(workstationId));
+        }
+
         Workstation config = workstationService.getWorkstationConfig(workstationId);
         return ResponseEntity.ok(config);
     }
@@ -27,6 +31,10 @@ public class WorkstationController {
     public ResponseEntity<Workstation> updateConfig(
             @PathVariable String workstationId,
             @RequestBody Workstation config){
+        if (workstationId.startsWith("guest_")){
+            return ResponseEntity.ok(workstationService.updateGuestConfig(workstationId, config));
+        }
+
         Workstation updateConfig = workstationService.updateConfig(workstationId, config);
         return ResponseEntity.ok(updateConfig);
     }
