@@ -3,7 +3,8 @@ import { useState, useEffect } from 'react';
 export default function Settings() {
   // Trạng thái lưu dữ liệu cấu hình
   const [config, setConfig] = useState({
-    minDistance: 40,
+    distanceThresholdMin: 40,
+    distanceThresholdMax: 70,
     maxDistance: 70,
     autoDimEnabled: true,
     manualLightLevel: 50,
@@ -75,8 +76,8 @@ export default function Settings() {
               <label className="block text-sm font-medium mb-1">Khoảng cách gần nhất (cm)</label>
               <input
                   type="number"
-                  name="minDistance"
-                  value={config.minDistance}
+                  name="distanceThresholdMin"
+                  value={config.distanceThresholdMin}
                   onChange={handleChange}
                   className="w-full border border-gray-300 p-2 rounded-md outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
               />
@@ -85,8 +86,8 @@ export default function Settings() {
               <label className="block text-sm font-medium mb-1">Khoảng cách xa nhất (cm)</label>
               <input
                   type="number"
-                  name="maxDistance"
-                  value={config.maxDistance}
+                  name="distanceThresholdMax"
+                  value={config.distanceThresholdMax}
                   onChange={handleChange}
                   className="w-full border border-gray-300 p-2 rounded-md outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
               />
