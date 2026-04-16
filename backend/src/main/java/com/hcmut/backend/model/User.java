@@ -5,6 +5,7 @@ import lombok.Data;
 import org.hibernate.annotations.CreationTimestamp;
 import java.time.LocalDateTime;
 import java.util.UUID;
+import com.fasterxml.jackson.annotation.JsonProperty;
 
 @Data
 @Entity
@@ -17,6 +18,7 @@ public class User {
     @Column(unique = true, nullable = false)
     private String username;
 
+    @JsonProperty(value = "password", access = JsonProperty.Access.WRITE_ONLY)
     private String passwordHash;
 
     @Column(columnDefinition = "varchar(255) default 'ROLE_USER'")

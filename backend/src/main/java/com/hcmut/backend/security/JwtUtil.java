@@ -12,14 +12,44 @@ import java.util.Date;
 
 @Component
 public class JwtUtil {
+
     @Value("${jwt.secret}")
     private String secretKey;
 
-    @Value("${jwt.secret}")
+    @Value("${jwt.expiration}")
     private long expirationTime;
 
     private SecretKey getSigningKey() {
-        byte[] keyBytes = Decoder.Base64.decode(secretKey);
-        return
+        byte[] keyBytes = Decoders.BASE64.decode(secretKey);
+        return Keys.hmacShaKeyFor(keyBytes);
+    }
+
+    // Tạo token khi User đăng nhập thành công
+    public String generateToken(String username) {
+        return Jwts.builder()
+                .subject(username)
+                .issuedAt(new Date(System.currentTimeMillis()))
+                .expiration(new Date(System.currentTimeMillis() + expirationTime))
+                .signWith(getSigningKey())
+                .compact();
+    }
+
+    // Giải mã và lấy Username từ Token
+    public String extractUsername(String token) {
+        Claims claims = Jwts.parser()
+                .verifyWith(getSigningKey())
+                .build()
+                .parseSignedClaims(token)
+                .getPayload();
+        return claims.getSubject();
+    }
+
+    public boolean validateToken(String token) {
+        try {
+            extractUsername(token);
+            return true; // Token hợp lệ và chưa hết hạn
+        } catch (Exception e) {
+            return false;
+        }
     }
 }
