@@ -69,4 +69,29 @@ public class WorkstationService {
         redisTemplate.opsForValue().set(guestId, configData, 7, TimeUnit.DAYS);
         return configData;
     }
+
+    @Transactional
+    public void transferGuestConfigToUser(String guestId, String username){
+        if (guestId == null || !guestId.startsWith("guest_")) return;
+
+
+        Object cachedData = redisTemplate.opsForValue().get(guestId);
+        if (cachedData != null){
+            Workstation guestWs = (Workstation) cachedData;
+
+            Workstation userWs = getWorkstationConfig(username);
+
+            userWs.setDistanceThresholdMin(guestWs.getDistanceThresholdMin());
+            userWs.setDistanceThresholdMax(guestWs.getDistanceThresholdMax());
+            userWs.setAutoDimEnabled(guestWs.getAutoDimEnabled());
+            userWs.setManualLightLevel(guestWs.getManualLightLevel());
+            userWs.setAutoSleepEnabled(guestWs.getAutoSleepEnabled());
+            userWs.setSleepTimeoutMins(guestWs.getSleepTimeoutMins());
+
+            workstationRepository.save(userWs);
+
+            redisTemplate.delete(guestId);
+            System.out.println(guestId + " thành" + username);
+        }
+    }
 }

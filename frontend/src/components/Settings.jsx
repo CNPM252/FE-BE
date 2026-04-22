@@ -2,7 +2,20 @@ import { useState, useEffect } from 'react';
 
 export default function Settings() {
 
+  const token = localStorage.getItem('token');
+
   const [wsId] = useState(() => {
+    if (token) {
+      // 1. Nếu là User có Token: Giải mã JWT (Base64) để lấy Username làm ID
+      try {
+        const payload = JSON.parse(atob(token.split('.')[1]));
+        return payload.sub; // Trả về 'a123'
+      } catch (e) {
+        console.error("Lỗi Token");
+      }
+    }
+
+    // 2. Nếu là Guest: Dùng logic cũ
     let id = localStorage.getItem('workstationId');
     if (!id) {
       id = 'guest_' + Math.random().toString(36).substring(2, 10);
@@ -26,19 +39,23 @@ export default function Settings() {
   // Trạng thái chờ tải dữ liệu
   const [loading, setLoading] = useState(true);
 
-  // 1. GET API: Tự động chạy khi vừa mở trang Cài đặt
+  // GET API: Tự động chạy khi vừa mở trang Cài đặt
   useEffect(() => {
-    fetch(`http://localhost:8080/api/workstations/${wsId}/config`)
+    fetch(`http://localhost:8080/api/workstations/${wsId}/config`, {
+      headers: {
+        'Authorization': token?`Bearer ${token}}` : ''
+      }
+    })
         .then(response => response.json())
         .then(data => {
           setConfig(data);
           setLoading(false); // Tắt hiệu ứng loading khi đã có dữ liệu
         })
         .catch(error => {
-          console.error("Lỗi khi tải cấu hình từ Backend:", error);
+          console.error("Lỗi lấy cấu hình Backend:", error);
           setLoading(false);
         });
-  }, [wsId]);
+  }, [wsId, token]);
 
   // Hàm xử lý khi người dùng gõ/kéo thanh trượt
   const handleChange = (e) => {
@@ -49,25 +66,25 @@ export default function Settings() {
     setConfig({ ...config, [e.target.name]: finalValue });
   };
 
-  // 2. PUT API: Chạy khi người dùng bấm nút "Lưu Cài Đặt"
+  // PUT API: update config
   const handleSave = (e) => {
     e.preventDefault();
-
     fetch(`http://localhost:8080/api/workstations/${wsId}/config`, {
       method: 'PUT',
       headers: {
         'Content-Type': 'application/json',
+        'Authorization': token?`Bearer ${token}`: ''
       },
-      body: JSON.stringify(config), // Biến object thành chuỗi JSON
+      body: JSON.stringify(config),
     })
         .then(response => response.json())
         .then(data => {
           console.log("Server trả về sau khi lưu: ", data);
-          alert("Đã lưu cấu hình thành công xuống Database!");
+          alert("Đã lưu cấu hình thành công");
         })
         .catch(error => {
           console.error("Lỗi khi lưu cấu hình:", error);
-          alert("Có lỗi kết nối đến máy chủ.");
+          alert("Có lỗi kết nối đến backend");
         });
   };
 
