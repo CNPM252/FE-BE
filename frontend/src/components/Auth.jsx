@@ -11,7 +11,7 @@ export default function Auth() {
     });
 
     // Trạng thái hiển thị thông báo lỗi/thành công
-    const [message, setMessage] = useState({ type: '', text: '' });
+    const [message, setMessage] = useState({type: '', text: ''});
 
     const handleChange = (e) => {
         setFormData({ ...formData, [e.target.name]: e.target.value });

@@ -8,7 +8,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
-import com.hcmut.backend.service.WorkstationService;
+import com.hcmut.backend.service.UserConfigService;
 
 import java.util.Optional;
 
@@ -28,7 +28,7 @@ public class AuthController {
     private JwtUtil jwtUtil;
 
     @Autowired
-    private WorkstationService workstationService;
+    private UserConfigService workstationService;
 
     // 1. API ĐĂNG KÝ
     @PostMapping("/register")
