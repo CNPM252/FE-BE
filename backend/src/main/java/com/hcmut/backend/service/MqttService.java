@@ -11,6 +11,9 @@ import lombok.RequiredArgsConstructor;
 import org.eclipse.paho.client.mqttv3.*;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
+import org.springframework.data.redis.core.StringRedisTemplate;
+import java.util.HashMap;
+import java.util.Map;
 
 @Service
 @RequiredArgsConstructor
@@ -24,6 +27,8 @@ public class MqttService {
 
     private MqttClient client;
     private final ObjectMapper objectMapper = new ObjectMapper(); // Để parse JSON
+
+    private final StringRedisTemplate stringRedisTemplate;
 
     // Tiêm repository để lưu DB
     private final HistoryLogRepository historyLogRepository;
@@ -59,27 +64,32 @@ public class MqttService {
     private void handleIncomingMessage(String topic, MqttMessage message) {
         try {
             String payload = new String(message.getPayload());
-            System.out.println("Nhận được từ [" + topic + "]: " + payload);
-
-            // Bóc tách MAC Address từ cái topic (Ví dụ: iot/devices/WS-001/sensors -> lấy WS-001)
             String macAddress = topic.split("/")[2];
 
-            // Chuyển chuỗi JSON thành Object để lấy số liệu
             JsonNode data = objectMapper.readTree(payload);
             int light = data.has("light") ? data.get("light").asInt() : 0;
             int distance = data.has("distance") ? data.get("distance").asInt() : 0;
 
-            // Tìm thiết bị trong DB để biết ai đang ngồi
             deviceRepository.findById(macAddress).ifPresent(device -> {
-                // Nếu có người đang ngồi (khác null và không phải guest) thì lưu log
                 if (device.getCurrentUser() != null && !device.getCurrentUser().startsWith("guest_")) {
-                    HistoryLog log = new HistoryLog();
-                    log.setDevice(device);
-                    log.setCurrentUserId(device.getCurrentUser());
-                    log.setLightValue(light);
-                    log.setDistanceValue(distance);
-                    historyLogRepository.save(log);
-                    System.out.println("Đã lưu HistoryLog cho user: " + device.getCurrentUser());
+
+                    // Thay vì save() thẳng xuống DB, ta đóng gói vào Map và đẩy lên Redis
+                    try {
+                        Map<String, Object> logData = new HashMap<>();
+                        logData.put("deviceMacAddress", device.getMacAddress());
+                        logData.put("currentUserId", device.getCurrentUser());
+                        logData.put("lightValue", light);
+                        logData.put("distanceValue", distance);
+                        logData.put("recordedAt", System.currentTimeMillis()); // Lưu timestamp để né lỗi Jackson
+
+                        String jsonString = objectMapper.writeValueAsString(logData);
+
+                        // Đẩy vào đuôi danh sách (List) trong Redis
+                        stringRedisTemplate.opsForList().rightPush("history_log_queue", jsonString);
+                        System.out.println("Đã hứng log vào Redis queue cho user: " + device.getCurrentUser());
+                    } catch (Exception e) {
+                        System.err.println("Lỗi khi đẩy log lên Redis: " + e.getMessage());
+                    }
                 }
             });
 
