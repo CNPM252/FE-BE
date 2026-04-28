@@ -17,6 +17,8 @@ export default function Auth() {
         setFormData({ ...formData, [e.target.name]: e.target.value });
     };
 
+    const DEVICE_MAC = import.meta.env.VITE_DEVICE_MAC || 'WS-001';
+
     const handleSubmit = async (e) => {
         e.preventDefault();
         setMessage({ type: '', text: '' }); // Xóa thông báo cũ
@@ -42,6 +44,17 @@ export default function Auth() {
                 if (isLogin) {
                     // LƯU JWT VÀO LOCAL STORAGE KHI ĐĂNG NHẬP THÀNH CÔNG
                     localStorage.setItem('token', dataText);
+
+                    // ---- CHECK-IN ----
+                    // Bóc Token để lấy username
+                    const payload = JSON.parse(atob(dataText.split('.')[1]));
+                    const username = payload.sub;
+
+                    await fetch(`http://localhost:8080/api/devices/${DEVICE_MAC}/check-in?userId=${username}`, {
+                        method: 'POST'
+                    });
+                    // ----------------------------------
+
                     setMessage({ type: 'success', text: 'Đăng nhập thành công!' });
 
                     // Chờ 1 giây rồi tải lại trang để áp dụng Token
@@ -145,8 +158,24 @@ export default function Auth() {
                 </div>
 
                 <button
-                    onClick={() => {
+                    onClick={async () => {
+                        // Tạo ID Guest mới nếu chưa có
+                        let guestId = localStorage.getItem('workstationId');
+                        if (!guestId) {
+                            guestId = 'guest_' + Math.random().toString(36).substring(2, 10);
+                            localStorage.setItem('workstationId', guestId);
+                        }
+
                         localStorage.setItem('guestMode', 'true');
+
+                        try {
+                            await fetch(`http://localhost:8080/api/devices/${DEVICE_MAC}/check-in?userId=${guestId}`, {
+                                method: 'POST'
+                            });
+                        } catch (e) {
+                            console.error("Lỗi Check-in Guest:", e);
+                        }
+
                         window.location.reload();
                     }}
                     className="w-full bg-white text-gray-700 border border-gray-300 py-3 rounded-lg font-bold hover:bg-gray-50 transition-all"
@@ -159,7 +188,7 @@ export default function Auth() {
                     <button
                         onClick={() => {
                             setIsLogin(!isLogin);
-                            setMessage({ type: '', text: '' }); // Xóa lỗi khi chuyển form
+                            setMessage({ type: '', text: '' });
                         }}
                         className="font-bold text-blue-600 hover:text-blue-800 hover:underline"
                     >

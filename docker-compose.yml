@@ -29,7 +29,7 @@ services:
       - "1883:1883"   # Cổng kết nối TCP cho Yolo:Bit và Spring Boot
       - "9001:9001"   # Cổng WebSocket (nếu sau này bạn cần web gọi trực tiếp vào Broker)
     volumes:
-      - ./mosquitto/config/mosquitto.conf:/mosquitto/config/mosquitto.conf
+      - ./mosquitto/config:/mosquitto/config
       - mosquitto_data:/mosquitto/data
       - mosquitto_log:/mosquitto/log
     restart: unless-stopped

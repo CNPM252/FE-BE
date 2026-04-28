@@ -12,7 +12,17 @@ const [activeTab, setActiveTab] = useState('dashboard');
   const hasToken = localStorage.getItem('token') !== null;
   const isGuest = localStorage.getItem('guestMode') === 'true';
 
-  const handleLogout = () => {
+  const DEVICE_MAC = import.meta.env.VITE_DEVICE_MAC || 'WS-001';
+
+  const handleLogout = async () => {
+    try {
+      await fetch(`http://localhost:8080/api/devices/${DEVICE_MAC}/check-out`, {
+        method: 'POST'
+      });
+    } catch (e) {
+      console.error("Lỗi check-out", e);
+    }
+
     localStorage.removeItem('token');
     localStorage.removeItem('guestMode');
     // Xóa luôn ID của Guest để lần sau vào tạo phiên làm việc mới
