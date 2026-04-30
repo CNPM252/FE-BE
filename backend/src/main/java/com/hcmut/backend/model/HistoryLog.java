@@ -19,7 +19,7 @@ public class HistoryLog {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "device_mac_address", referencedColumnName = "device_mac_address")
-    private Device deviceMacAddress;
+    private Device device;
 
     @Column(name = "current_user_id")
     private String currentUserId;

@@ -27,7 +27,7 @@ public class HistoryLogSyncTask {
     private final ObjectMapper objectMapper = new ObjectMapper();
 
     // Chạy mỗi 1 phút một lần để test (Sau này deploy thật thì đổi thành 900000 = 15 phút)
-    @Scheduled(fixedRate = 60000)
+    @Scheduled(fixedRate = 600000)
     public void syncLogsToDatabase() {
         String queueName = "history_log_queue";
 
@@ -55,7 +55,7 @@ public class HistoryLogSyncTask {
                     Device deviceRef = deviceRepository.findById(macAddressStr).orElse(null);
 
                     if (deviceRef != null) {
-                        log.setDeviceMacAddress(deviceRef);
+                        log.setDevice(deviceRef);
                     }
 
                     log.setCurrentUserId(data.get("currentUserId").asText());

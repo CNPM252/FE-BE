@@ -30,7 +30,6 @@ public class MqttService {
 
     private final StringRedisTemplate stringRedisTemplate;
 
-    // Tiêm repository để lưu DB
     private final HistoryLogRepository historyLogRepository;
     private final DeviceRepository deviceRepository;
 
