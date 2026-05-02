@@ -1,5 +1,7 @@
 package com.hcmut.backend.security;
 
+import com.hcmut.backend.model.User;
+import com.hcmut.backend.repository.UserRepository;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.io.Decoders;
@@ -26,16 +28,16 @@ public class JwtUtil {
     }
 
     // Tạo token khi User đăng nhập thành công
-    public String generateToken(String username) {
+    public String generateToken(User username) {
         return Jwts.builder()
-                .subject(username)
+                .claim("role", username.getRole())
+                .subject(username.getUsername())
                 .issuedAt(new Date(System.currentTimeMillis()))
-                .expiration(new Date(System.currentTimeMillis() + expirationTime))
+                .expiration(new Date(System.currentTimeMillis() + 86400000))
                 .signWith(getSigningKey())
                 .compact();
     }
 
-    // Giải mã và lấy Username từ Token
     public String extractUsername(String token) {
         Claims claims = Jwts.parser()
                 .verifyWith(getSigningKey())
@@ -45,10 +47,19 @@ public class JwtUtil {
         return claims.getSubject();
     }
 
+    public String extractRole(String token){
+        Claims claims = Jwts.parser()
+                .verifyWith(getSigningKey())
+                .build()
+                .parseSignedClaims(token)
+                .getPayload();
+        return (String) claims.get("role", String.class)  ;
+    }
+
     public boolean validateToken(String token) {
         try {
             extractUsername(token);
-            return true; // Token hợp lệ và chưa hết hạn
+            return true;
         } catch (Exception e) {
             return false;
         }

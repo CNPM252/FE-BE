@@ -53,7 +53,7 @@ public class AuthController {
         if (userOpt.isPresent() && passwordEncoder.matches(loginRequest.getPasswordHash(), userOpt.get().getPasswordHash())) {
 
             workstationService.transferGuestConfigToUser(guestId, userOpt.get().getUsername());
-            String token = jwtUtil.generateToken(userOpt.get().getUsername());
+            String token = jwtUtil.generateToken(userOpt.get());
             return ResponseEntity.ok(token);
         }
 
