@@ -1,0 +1,11 @@
+.settings-container { padding: 20px; max-width: 600px; }
+.settings-form { background: #fff; padding: 25px; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); }
+.form-group { margin-bottom: 20px; display: flex; flex-direction: column;}
+.form-group label { font-weight: 600; margin-bottom: 8px; color: #334155; }
+.toggle-group { flex-direction: row; align-items: center; }
+.toggle-group input { margin-right: 10px; transform: scale(1.2); }
+.range-inputs { display: flex; gap: 10px; align-items: center; }
+.range-inputs input[type="number"], .form-group input[type="number"] { padding: 8px; border: 1px solid #cbd5e1; border-radius: 6px; width: 80px; }
+.btn-save { background: #3b82f6; color: white; border: none; padding: 12px 20px; border-radius: 8px; font-size: 1rem; cursor: pointer; font-weight: bold; width: 100%; transition: background 0.2s; }
+.btn-save:hover { background: #2563eb; }
+.status-message { padding: 10px; background: #dcfce7; color: #166534; border-radius: 6px; margin-bottom: 20px; text-align: center; font-weight: bold;}
