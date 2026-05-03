@@ -2,10 +2,11 @@ import { useState } from 'react'
 import Dashboard from './components/Dashboard'
 import Settings from './components/Settings'
 import Auth from './components/Auth'
-import UserProfile from './components/UserProfile' // Thêm dòng import này
+import UserProfile from './components/UserProfile' // Thêm import
 import './styles/global.css'
 
 function App() {
+
   const [activeTab, setActiveTab] = useState('dashboard');
 
   const hasToken = localStorage.getItem('token') !== null;
@@ -35,25 +36,15 @@ function App() {
       <div className="min-h-screen bg-gray-50 p-6">
         <div className="max-w-5xl mx-auto">
 
-          {/* --- HEADER MỚI --- */}
-          <header className="flex justify-between items-center mb-8 bg-white px-6 py-3 rounded-2xl shadow-sm">
-            <div className="text-xl font-black text-blue-600 tracking-tight">
-              BK<span className="text-gray-800">Workspace</span>
+          {/* --- HEADER CHỨA AVATAR --- */}
+          <div className="max-w-2xl mx-auto flex justify-between items-center mb-6">
+            <div className="text-2xl font-black text-gray-800 tracking-tight">
+              BK<span className="text-blue-600">Workspace</span>
             </div>
 
-            <div className="flex items-center gap-4">
-              {/* Hiển thị badge nếu đang ở chế độ Khách */}
-              {isGuest && (
-                  <span className="text-sm font-semibold text-orange-600 bg-orange-100 px-3 py-1 rounded-full">
-                Chế độ Khách
-              </span>
-              )}
-
-              {/* Truyền hàm handleLogout từ App xuống cho UserProfile */}
-              <UserProfile onLogout={handleLogout} />
-            </div>
-          </header>
-          {/* ------------------- */}
+            {/* Gắn UserProfile vào góc phải */}
+            <UserProfile onLogout={handleLogout} isGuest={isGuest} />
+          </div>
 
           {/* Nút chuyển đổi (Toggle) */}
           <div className="flex justify-center mb-8">
@@ -73,7 +64,7 @@ function App() {
             </div>
           </div>
 
-          {/* Render Tab tương ứng */}
+          {/* Khu vực Content giữ nguyên */}
           {activeTab === 'dashboard' ? <Dashboard /> : <Settings />}
 
         </div>
