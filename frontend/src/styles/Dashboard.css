@@ -1,14 +1,126 @@
-.dashboard-container { padding: 20px; }
-.stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px; margin-bottom: 30px; }
-.stat-card { display: flex; align-items: center; background: #fff; padding: 20px; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); }
-.stat-icon { font-size: 2rem; margin-right: 15px; padding: 15px; border-radius: 50%; background: #f0f4f8; }
-.stat-info h3 { margin: 0; font-size: 0.9rem; color: #64748b; }
-.stat-info p { margin: 5px 0 0; font-size: 1.5rem; font-weight: bold; color: #0f172a; }
+/* src/styles/Dashboard.css */
+.dashboard-container {
+    max-width: 1200px;
+    margin: 0 auto;
+}
 
-/* Placeholder cho Heatmap */
-.heat-level { padding: 5px 15px; border-radius: 20px; font-weight: bold; color: white;}
-.level-0 { background-color: #ebedf0; color: #aaa; }
-.level-1 { background-color: #9be9a8; }
-.level-2 { background-color: #40c463; }
-.level-3 { background-color: #30a14e; }
-.level-4 { background-color: #216e39; }
+.kpi-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 20px;
+    margin-bottom: 24px;
+}
+
+.kpi-card {
+    background: #ffffff;
+    border: 1px solid #f0f0f0;
+    border-radius: 8px;
+    padding: 20px;
+    text-align: center;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.02);
+}
+
+.kpi-card .kpi-title {
+    font-size: 14px;
+    color: #888;
+    margin-bottom: 10px;
+    font-weight: 500;
+}
+
+.kpi-card .kpi-value {
+    font-size: 24px;
+    font-weight: 700;
+}
+
+.kpi-value.blue { color: #2563eb; }
+.kpi-value.green { color: #16a34a; }
+.kpi-value.purple { color: #9333ea; }
+.kpi-value.orange { color: #ea580c; }
+
+.chart-card {
+    background: #ffffff;
+    border: 1px solid #f0f0f0;
+    border-radius: 8px;
+    padding: 24px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.02);
+}
+
+.chart-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+}
+
+.chart-header h3 {
+    margin: 0;
+    font-size: 18px;
+    color: #333;
+}
+
+.chart-select {
+    padding: 6px 12px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    font-size: 14px;
+    outline: none;
+    cursor: pointer;
+}
+
+/* --- HEATMAP STYLES --- */
+.heatmap-card {
+    background: #ffffff;
+    border: 1px solid #f0f0f0;
+    border-radius: 8px;
+    padding: 24px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.02);
+    margin-top: 24px;
+}
+
+.heatmap-card h3 {
+    margin: 0 0 20px 0;
+    font-size: 18px;
+    color: #333;
+}
+
+.heatmap-wrapper {
+    width: 100%;
+    margin-bottom: 10px;
+}
+
+/* Định nghĩa màu sắc cho 4 level từ backend */
+.react-calendar-heatmap .color-empty { fill: #ebedf0; }
+.react-calendar-heatmap .color-scale-1 { fill: #9be9a8; }
+.react-calendar-heatmap .color-scale-2 { fill: #40c463; }
+.react-calendar-heatmap .color-scale-3 { fill: #30a14e; }
+.react-calendar-heatmap .color-scale-4 { fill: #216e39; }
+
+/* Làm bo góc các ô vuông nhỏ cho đẹp */
+.react-calendar-heatmap rect {
+    rx: 2;
+    ry: 2;
+    stroke: #fff;
+    stroke-width: 1px;
+}
+
+.react-calendar-heatmap text {
+    font-size: 8px;
+    fill: #aaa;
+}
+
+/* Legend (Chú thích) */
+.heatmap-legend {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 4px;
+    font-size: 12px;
+    color: #666;
+    margin-top: 10px;
+}
+
+.legend-box {
+    width: 12px;
+    height: 12px;
+    border-radius: 2px;
+}

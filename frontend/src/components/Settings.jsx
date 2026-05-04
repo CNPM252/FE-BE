@@ -1,192 +1,161 @@
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
+import axiosClient from '../api/axiosClient';
+import { useAuth } from '../context/AuthContext';
+import '../styles/Settings.css';
 
-export default function Settings() {
+const Settings = () => {
+  const { user, isGuest } = useAuth();
 
-  const token = localStorage.getItem('token');
-
-  const [wsId] = useState(() => {
-    if (token) {
-      // 1. Nếu là User có Token: Giải mã JWT (Base64) để lấy Username làm ID
-      try {
-        const payload = JSON.parse(atob(token.split('.')[1]));
-        return payload.sub; // Trả về 'a123'
-      } catch (e) {
-        console.error("Lỗi Token");
-      }
-    }
-
-    // 2. Nếu là Guest: Dùng logic cũ
-    let id = localStorage.getItem('workstationId');
-    if (!id) {
-      id = 'guest_' + Math.random().toString(36).substring(2, 10);
-      localStorage.setItem('workstationId', id);
-    }
-    return id;
-  });
-
-  // Trạng thái lưu dữ liệu cấu hình
+  // Map tên biến KHỚP 100% VỚI MODEL UserConfig TRONG JAVA
   const [config, setConfig] = useState({
     distanceThresholdMin: 40,
     distanceThresholdMax: 70,
-    maxDistance: 70,
-    autoDimEnabled: true,
-    autoSleepEnabled: true,
+    autoDimEnabled: false,
     manualLightLevel: 50,
+    autoSleepEnabled: true,
     sleepTimeoutMins: 3
   });
 
+  const currentUserId = isGuest
+      ? sessionStorage.getItem('guestId')
+      : (user?.id || user?.userId || user?.uuid || user?.username || (typeof user === 'string' ? user : ''));
 
-  // Trạng thái chờ tải dữ liệu
-  const [loading, setLoading] = useState(true);
-
-  // GET API: Tự động chạy khi vừa mở trang Cài đặt
   useEffect(() => {
-    fetch(`http://localhost:8080/api/workstations/${wsId}/config`, {
-      headers: {
-        'Authorization': token?`Bearer ${token}}` : ''
+    const fetchConfig = async () => {
+      if (!currentUserId) return;
+      try {
+        const res = await axiosClient.get(`/api/workstations/${currentUserId}/config`);
+
+        if (res.data) {
+          // Áp dụng dữ liệu từ server đè lên state hiện tại
+          setConfig(prev => ({
+            ...prev,
+            distanceThresholdMin: res.data.distanceThresholdMin ?? 40,
+            distanceThresholdMax: res.data.distanceThresholdMax ?? 70,
+            autoDimEnabled: res.data.autoDimEnabled ?? false,
+            manualLightLevel: res.data.manualLightLevel ?? 50,
+            autoSleepEnabled: res.data.autoSleepEnabled ?? true,
+            sleepTimeoutMins: res.data.sleepTimeoutMins ?? 3
+          }));
+        }
+      } catch (error) {
+        console.error("Lỗi khi tải cấu hình từ server:", error);
       }
-    })
-        .then(response => response.json())
-        .then(data => {
-          setConfig(data);
-          setLoading(false); // Tắt hiệu ứng loading khi đã có dữ liệu
-        })
-        .catch(error => {
-          console.error("Lỗi lấy cấu hình Backend:", error);
-          setLoading(false);
-        });
-  }, [wsId, token]);
+    };
+    fetchConfig();
+  }, [currentUserId, user]);
 
-  // Hàm xử lý khi người dùng gõ/kéo thanh trượt
   const handleChange = (e) => {
-    const value = e.target.type === 'checkbox' ? e.target.checked : e.target.value;
-    // Đảm bảo dữ liệu số được ép kiểu thành Number để tránh lỗi khi gửi xuống DB
-    const finalValue = e.target.type === 'number' || e.target.type === 'range' ? Number(value) : value;
-
-    setConfig({ ...config, [e.target.name]: finalValue });
+    const { name, value, type, checked } = e.target;
+    setConfig({
+      ...config,
+      [name]: type === 'checkbox' ? checked : Number(value)
+    });
   };
 
-  // PUT API: update config
-  const handleSave = (e) => {
-    e.preventDefault();
-    fetch(`http://localhost:8080/api/workstations/${wsId}/config`, {
-      method: 'PUT',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': token?`Bearer ${token}`: ''
-      },
-      body: JSON.stringify(config),
-    })
-        .then(response => response.json())
-        .then(data => {
-          console.log("Server trả về sau khi lưu: ", data);
-          alert("Đã lưu cấu hình thành công");
-        })
-        .catch(error => {
-          console.error("Lỗi khi lưu cấu hình:", error);
-          alert("Có lỗi kết nối đến backend");
-        });
-  };
+  const handleSave = async () => {
+    if (!currentUserId) {
+      alert("Không tìm thấy ID người dùng!");
+      return;
+    }
 
-  if (loading) {
-    return <div className="p-8 text-center font-medium text-gray-500">Đang đồng bộ dữ liệu với trạm làm việc...</div>;
-  }
+    try {
+      await axiosClient.put(`/api/workstations/${currentUserId}/config`, config);
+      alert("Đã lưu cấu hình thành công!");
+    } catch (error) {
+      console.error("Lỗi khi lưu cấu hình:", error);
+      alert("Có lỗi xảy ra khi lưu! Vui lòng kiểm tra lại kết nối.");
+    }
+  };
 
   return (
-      <div className="bg-white p-8 rounded-xl shadow-sm border border-gray-100 max-w-2xl mx-auto">
-        <h2 className="text-2xl font-bold mb-6">Cấu hình hệ thống</h2>
+      <div className="settings-container">
+        <div className="settings-card">
+          <h2 className="settings-title">Cấu hình hệ thống</h2>
 
-        <form onSubmit={handleSave} className="space-y-6">
-
-          {/* Nhóm 1: Khoảng cách */}
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-medium mb-1">Khoảng cách gần nhất (cm)</label>
+          <div className="input-row">
+            <div className="input-group">
+              <label>Khoảng cách gần nhất (cm)</label>
               <input
                   type="number"
                   name="distanceThresholdMin"
                   value={config.distanceThresholdMin}
                   onChange={handleChange}
-                  className="w-full border border-gray-300 p-2 rounded-md outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
               />
             </div>
-            <div>
-              <label className="block text-sm font-medium mb-1">Khoảng cách xa nhất (cm)</label>
+            <div className="input-group">
+              <label>Khoảng cách xa nhất (cm)</label>
               <input
                   type="number"
                   name="distanceThresholdMax"
                   value={config.distanceThresholdMax}
                   onChange={handleChange}
-                  className="w-full border border-gray-300 p-2 rounded-md outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
               />
             </div>
           </div>
 
-          {/* Nhóm 2: Điều khiển Ánh sáng */}
-          <div className="space-y-4 pt-4 border-t border-gray-100">
-            <label className="flex items-center space-x-3 cursor-pointer">
-              <input
-                  type="checkbox"
-                  name="autoDimEnabled"
-                  checked={config.autoDimEnabled}
-                  onChange={handleChange}
-                  className="w-5 h-5 accent-blue-600"
-              />
-              <span className="font-medium">Auto-dim (Tự động điều chỉnh độ sáng)</span>
-            </label>
+          <div className="divider"></div>
 
-            {!config.autoDimEnabled && (
-                <div className="pl-8 pt-2">
-                  <label className="block text-sm font-medium mb-2">
-                    Độ sáng thủ công: <span className="text-blue-600 font-bold">{config.manualLightLevel}%</span>
-                  </label>
-                  <input
-                      type="range"
-                      name="manualLightLevel"
-                      min="0"
-                      max="100"
-                      value={config.manualLightLevel}
-                      onChange={handleChange}
-                      className="w-full cursor-pointer accent-blue-600"
-                  />
-                </div>
-            )}
+          <div className="checkbox-group">
+            <input
+                type="checkbox"
+                id="autoDimEnabled"
+                name="autoDimEnabled"
+                checked={config.autoDimEnabled}
+                onChange={handleChange}
+            />
+            <label htmlFor="autoDimEnabled">Auto-dim (Tự động điều chỉnh độ sáng)</label>
           </div>
 
-          {/* Nhóm 3: Điều khiển Năng lượng */}
-          <div className="space-y-4 pt-4 border-t border-gray-100">
-            <label className="flex items-center space-x-3 cursor-pointer">
-              <input
-                  type="checkbox"
-                  name="autoSleepEnabled"
-                  checked={config.autoSleepEnabled}
-                  onChange={handleChange}
-                  className="w-5 h-5 accent-blue-600"
-              />
-              <span className="font-medium">Auto-sleep (Tự động tắt khi vắng mặt)</span>
-            </label>
-
-            {config.autoSleepEnabled && (
-                <div className="pl-8 pt-2">
-                  <label className="block text-sm font-medium mb-1">Thời gian chờ trước khi Sleep (phút)</label>
-                  <input
-                      type="number"
-                      name="sleepTimeoutMins"
-                      value={config.sleepTimeoutMins}
-                      onChange={handleChange}
-                      className="w-48 border border-gray-300 p-2 rounded-md outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
-                  />
+          {!config.autoDimEnabled && (
+              <div className="sub-setting">
+                <div className="sub-setting-header">
+                  Độ sáng thủ công: <span>{config.manualLightLevel}%</span>
                 </div>
-            )}
+                <input
+                    type="range"
+                    name="manualLightLevel"
+                    min="0" max="100"
+                    value={config.manualLightLevel}
+                    onChange={handleChange}
+                />
+              </div>
+          )}
+
+          <div className="divider"></div>
+
+          <div className="checkbox-group">
+            <input
+                type="checkbox"
+                id="autoSleepEnabled"
+                name="autoSleepEnabled"
+                checked={config.autoSleepEnabled}
+                onChange={handleChange}
+            />
+            <label htmlFor="autoSleepEnabled">Auto-sleep (Tự động tắt khi vắng mặt)</label>
           </div>
 
-          <button
-              type="submit"
-              className="w-full bg-blue-600 text-white py-3 rounded-md font-bold mt-4 hover:bg-blue-700 transition-colors"
-          >
+          {config.autoSleepEnabled && (
+              <div className="sub-setting" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+                <div className="sub-setting-header" style={{ marginBottom: '8px' }}>
+                  Thời gian chờ trước khi Sleep (phút)
+                </div>
+                <input
+                    type="number"
+                    name="sleepTimeoutMins"
+                    value={config.sleepTimeoutMins}
+                    onChange={handleChange}
+                    style={{ width: '120px', padding: '8px', border: '1px solid #ddd', borderRadius: '4px', textAlign: 'center' }}
+                />
+              </div>
+          )}
+
+          <button className="btn-save" onClick={handleSave}>
             Lưu Cài Đặt
           </button>
-        </form>
+        </div>
       </div>
   );
-}
+};
+
+export default Settings;
