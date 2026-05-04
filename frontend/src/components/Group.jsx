@@ -22,7 +22,6 @@ const Groups = () => {
 
     const currentUsername = user?.id || user?.username;
 
-    // 1. Lấy danh sách Phòng của User này quản lý
     useEffect(() => {
         if (isGuest || !currentUsername) return;
 
@@ -42,7 +41,6 @@ const Groups = () => {
         fetchRooms();
     }, [isGuest, currentUsername]);
 
-    // 2. Lấy danh sách Group khi đổi Phòng
     useEffect(() => {
         if (!selectedRoom) return;
 
@@ -62,7 +60,6 @@ const Groups = () => {
         fetchGroups();
     }, [selectedRoom]);
 
-    // 3. Lấy danh sách Member khi chọn Group
     useEffect(() => {
         if (!selectedGroup) return;
 
@@ -77,26 +74,25 @@ const Groups = () => {
         fetchMembers();
     }, [selectedGroup]);
 
-    // Hành động: Tạo Group
     const handleCreateGroup = async (e) => {
         e.preventDefault();
         if (!newGroupName.trim() || !selectedRoom) return;
 
         try {
+            // ĐÃ FIX: Gửi managerUsername thay vì UUID
             await axiosClient.post(`/api/rooms/${selectedRoom}/groups`, {
                 name: newGroupName,
-                managerId: user.uuid || null // Gửi kèm ID của người tạo (nếu DB yêu cầu)
+                managerUsername: currentUsername
             });
             setNewGroupName('');
-            // Tải lại groups
             const response = await axiosClient.get(`/api/rooms/${selectedRoom}/groups`);
             setGroups(response.data);
         } catch (error) {
+            console.error("Lỗi tạo nhóm", error);
             alert("Lỗi khi tạo nhóm!");
         }
     };
 
-    // Hành động: Xóa Group
     const handleDeleteGroup = async (groupId, e) => {
         e.stopPropagation();
         if(!window.confirm("Xóa nhóm này?")) return;
@@ -112,19 +108,16 @@ const Groups = () => {
         }
     };
 
-    // Hành động: Thêm Sinh viên vào Group bằng MSSV
     const handleAddMember = async (e) => {
         e.preventDefault();
         if (!newMemberUsername.trim() || !selectedGroup) return;
         setErrorMsg('');
 
         try {
-            // Đã đổi API để gửi username (MSSV) thay vì UUID
             await axiosClient.post(`/api/groups/${selectedGroup.id}/members`, {
                 username: newMemberUsername.trim()
             });
             setNewMemberUsername('');
-            // Tải lại members
             const response = await axiosClient.get(`/api/groups/${selectedGroup.id}/members`);
             setMembers(response.data);
         } catch (error) {
@@ -132,7 +125,6 @@ const Groups = () => {
         }
     };
 
-    // Hành động: Xóa Sinh viên
     const handleRemoveMember = async (userId) => {
         if(!window.confirm("Xóa sinh viên này khỏi nhóm?")) return;
         try {
@@ -161,7 +153,6 @@ const Groups = () => {
                     <p className="text-sm text-gray-500 mt-1">Sắp xếp sinh viên vào các nhóm để dễ dàng quản lý.</p>
                 </div>
 
-                {/* Chọn Không gian (Room) */}
                 <select
                     value={selectedRoom}
                     onChange={(e) => setSelectedRoom(e.target.value)}
@@ -175,7 +166,6 @@ const Groups = () => {
             </div>
 
             <div className="flex flex-1 gap-6 min-h-[500px]">
-                {/* CỘT TRÁI: QUẢN LÝ NHÓM */}
                 <div className="w-1/3 bg-white rounded-xl shadow-sm border border-gray-100 flex flex-col overflow-hidden">
                     <div className="p-4 border-b border-gray-100 bg-gray-50">
                         <h3 className="font-bold text-gray-700 flex items-center">
@@ -187,7 +177,7 @@ const Groups = () => {
                         <form onSubmit={handleCreateGroup} className="flex gap-2">
                             <input
                                 type="text"
-                                placeholder="Tên nhóm mới (VD: L03)..."
+                                placeholder="Tên nhóm mới..."
                                 value={newGroupName}
                                 onChange={(e) => setNewGroupName(e.target.value)}
                                 className="flex-1 border p-2 rounded outline-none text-sm focus:border-blue-500"
@@ -218,7 +208,6 @@ const Groups = () => {
                     </div>
                 </div>
 
-                {/* CỘT PHẢI: QUẢN LÝ THÀNH VIÊN */}
                 <div className="flex-1 bg-white rounded-xl shadow-sm border border-gray-100 flex flex-col overflow-hidden">
                     {!selectedGroup ? (
                         <div className="flex-1 flex flex-col items-center justify-center text-gray-400">

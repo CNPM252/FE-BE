@@ -9,6 +9,7 @@ import UserProfile from './components/UserProfile';
 import './styles/global.css';
 import Rooms from "./components/Rooms.jsx";
 import RoomDetail from "./components/RoomDetail";
+import Groups from "./components/Group.jsx";
 
 function App() {
   return (
@@ -22,6 +23,7 @@ function App() {
                   <Route path="/settings" element={<Settings />} />
                   <Route path="/rooms" element={<Rooms />} />
                   <Route path="/rooms/:roomId" element={<RoomDetail />} />
+                  <Route path="/groups" element={<Groups />} />
 
                   <Route path="/" element={<Navigate to="/dashboard" replace />} />
               </Route>

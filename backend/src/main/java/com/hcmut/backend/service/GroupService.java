@@ -34,7 +34,7 @@ public class GroupService {
         Room room = roomRepository.findById(roomId)
                 .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy phòng máy!"));
 
-        User manager = userRepository.findById(request.getManagerId())
+        User manager = userRepository.findByUsername(request.getManagerUsername())
                 .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy User/Giáo viên quản lý!"));
 
         Group group = new Group();
@@ -55,11 +55,11 @@ public class GroupService {
         GroupDTO dto = new GroupDTO();
         dto.setId(group.getId());
         dto.setName(group.getName());
-        if (group.getManager() != null) dto.setManagerId(group.getManager().getId());
+        if (group.getManager() != null) dto.setManagerUsername(group.getManager().getUsername());
         if (group.getRoom() != null) dto.setRoomId(group.getRoom().getId());
         dto.setCreatedAt(group.getCreatedAt());
         return dto;
     }
 
-    
+
 }

@@ -1,70 +1,49 @@
-package com.hcmut.backend.service;
+package com.hcmut.backend.controller;
 
-import com.hcmut.backend.dto.MemberResponseDTO;
-import com.hcmut.backend.model.Group;
-import com.hcmut.backend.model.GroupMember;
-import com.hcmut.backend.model.GroupMemberKey;
-import com.hcmut.backend.model.User;
-import com.hcmut.backend.repository.GroupMemberRepository;
-import com.hcmut.backend.repository.GroupRepository;
-import com.hcmut.backend.repository.UserRepository;
+import com.hcmut.backend.dto.AddMemberRequest;
+import com.hcmut.backend.service.GroupMemberService;
 import lombok.RequiredArgsConstructor;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
 
-import java.util.List;
 import java.util.UUID;
-import java.util.stream.Collectors;
 
-@Service
+@RestController
+@RequestMapping("/api/groups")
+@CrossOrigin(origins = "*")
 @RequiredArgsConstructor
-public class GroupMemberService {
+public class GroupMemberController {
 
-    private final GroupMemberRepository groupMemberRepository;
-    private final GroupRepository groupRepository;
-    private final UserRepository userRepository;
+    private final GroupMemberService groupMemberService;
 
-    // Lấy danh sách thành viên
-    public List<MemberResponseDTO> getMembersOfGroup(UUID groupId) {
-        return groupMemberRepository.findByGroup_Id(groupId).stream().map(gm -> {
-            MemberResponseDTO dto = new MemberResponseDTO();
-            dto.setUserId(gm.getUser().getId());
-            dto.setUsername(gm.getUser().getUsername());
-            dto.setInAppName(gm.getUser().getInAppName());
-            dto.setJoinedAt(gm.getJoinedAt());
-            return dto;
-        }).collect(Collectors.toList());
+    // Lấy danh sách
+    @GetMapping("/{groupId}/members")
+    public ResponseEntity<?> getGroupMembers(@PathVariable UUID groupId) {
+        return ResponseEntity.ok(groupMemberService.getMembersOfGroup(groupId));
     }
 
-    // Thêm User vào Group (dựa theo Username/MSSV)
-    @Transactional
-    public void addMemberToGroup(UUID groupId, String username) {
-        Group group = groupRepository.findById(groupId)
-                .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy Nhóm (Group) này!"));
-
-        User user = userRepository.findByUsername(username)
-                .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy sinh viên có MSSV: " + username));
-
-        GroupMemberKey key = new GroupMemberKey(groupId, user.getId());
-
-        if (groupMemberRepository.existsById(key)) {
-            throw new IllegalArgumentException("Sinh viên này đã là thành viên của Nhóm rồi!");
+    // Thêm thành viên
+    @PostMapping("/{groupId}/members")
+    public ResponseEntity<?> addMemberToGroup(@PathVariable UUID groupId, @RequestBody AddMemberRequest request) {
+        try {
+            if (request.getUsername() == null || request.getUsername().isEmpty()) {
+                return ResponseEntity.badRequest().body("Thiếu thông tin MSSV!");
+            }
+            groupMemberService.addMemberToGroup(groupId, request.getUsername());
+            return ResponseEntity.ok("Đã thêm thành viên vào nhóm thành công!");
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
         }
-
-        GroupMember newMember = new GroupMember();
-        newMember.setId(key);
-        newMember.setGroup(group);
-        newMember.setUser(user);
-
-        groupMemberRepository.save(newMember);
     }
 
-    // Xóa User khỏi Group
-    @Transactional
-    public void removeMemberFromGroup(UUID groupId, UUID userId) {
-        GroupMemberKey key = new GroupMemberKey(groupId, userId);
-        if (groupMemberRepository.existsById(key)) {
-            groupMemberRepository.deleteById(key);
+    // Xóa thành viên
+    @DeleteMapping("/{groupId}/members/{userId}")
+    public ResponseEntity<?> removeMember(@PathVariable UUID groupId, @PathVariable UUID userId) {
+        try {
+            groupMemberService.removeMemberFromGroup(groupId, userId);
+            return ResponseEntity.ok("Đã xóa thành viên khỏi nhóm!");
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
         }
     }
 }

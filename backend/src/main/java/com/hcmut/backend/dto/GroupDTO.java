@@ -8,7 +8,7 @@ import java.time.LocalDateTime;
 public class GroupDTO {
     private UUID id;
     private String name;
-    private UUID managerId;
+    private String managerUsername;
     private UUID roomId;
     private LocalDateTime createdAt;
 }

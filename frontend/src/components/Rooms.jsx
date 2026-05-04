@@ -1,225 +1,278 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useAuth } from '../context/AuthContext';
 import axiosClient from '../api/axiosClient';
-import { Plus, Trash2, Map, Users, Hash, ShieldAlert } from 'lucide-react';
+import { useAuth } from '../context/AuthContext';
+import { Plus, Map, Trash2, ShieldAlert, MonitorUp, X, RefreshCw } from 'lucide-react';
+
+// Danh sách MAC ảo để test trong lúc chờ thiết bị IOT thật
+const MOCK_MAC_ADDRESSES = [
+    'MAC-101', 'MAC-102', 'MAC-103', 'MAC-104', 'MAC-105',
+    'AC:12:34:56:78:90', 'B8:27:EB:00:11:22', '00:14:22:01:23:45',
+    'F0:E1:D2:C3:B4:A5', 'AA:BB:CC:DD:EE:FF'
+];
 
 const Rooms = () => {
-    const { user, isGuest } = useAuth(); // Lấy thông tin user từ Context
-    const [rooms, setRooms] = useState([]);
-    const [loading, setLoading] = useState(true);
-    const [isModalOpen, setIsModalOpen] = useState(false);
-    const [newRoom, setNewRoom] = useState({ name: '', roomCode: '', capacity: 50 });
-    const [errorMsg, setErrorMsg] = useState('');
+    const { user, isGuest } = useAuth();
     const navigate = useNavigate();
 
-    // Định danh của User hiện tại
+    // States cho danh sách phòng
+    const [rooms, setRooms] = useState([]);
+    const [loading, setLoading] = useState(true);
+
+    // States cho Modal Tạo Phòng
+    const [showCreateModal, setShowCreateModal] = useState(false);
+    const [newRoomData, setNewRoomData] = useState({ name: '', roomCode: '' });
+
+    // States cho Modal Thêm Máy (Auto-Join)
+    const [showDeviceModal, setShowDeviceModal] = useState(false);
+    const [devicePayload, setDevicePayload] = useState({ macAddress: '', roomCode: '' });
+
     const currentUsername = user?.id || user?.username;
 
-    // 1. GỌI API: Chỉ lấy danh sách phòng do User này tạo
-    const fetchRooms = async () => {
-        if (!currentUsername) return;
+    // Tải danh sách phòng
+    useEffect(() => {
+        if (isGuest || !currentUsername) return;
+        fetchRooms();
+    }, [isGuest, currentUsername]);
 
+    const fetchRooms = async () => {
+        setLoading(true);
         try {
-            setLoading(true);
-            // Gửi params ?owner=username để backend biết đường lọc
             const response = await axiosClient.get('/api/rooms', {
                 params: { owner: currentUsername }
             });
             setRooms(response.data);
-            setErrorMsg('');
         } catch (error) {
-            console.error("Lỗi khi tải danh sách phòng:", error);
-            setErrorMsg('Không thể tải danh sách không gian. Vui lòng thử lại.');
+            console.error("Lỗi tải danh sách không gian:", error);
         } finally {
             setLoading(false);
         }
     };
 
-    useEffect(() => {
-        // Nếu là Guest thì không cần fetch vì Guest không có quyền quản lý phòng
-        if (!isGuest && currentUsername) {
-            fetchRooms();
-        } else {
-            setLoading(false);
-        }
-    }, [isGuest, currentUsername]);
-
-    // 2. GỌI API: Tạo phòng mới (Đính kèm thông tin Owner)
     const handleCreateRoom = async (e) => {
         e.preventDefault();
-        setErrorMsg('');
         try {
-            const payload = {
-                ...newRoom,
-                ownerUsername: currentUsername // Gửi cờ đánh dấu ai là chủ phòng
-            };
-            await axiosClient.post('/api/rooms', payload);
-            setIsModalOpen(false);
-            setNewRoom({ name: '', roomCode: '', capacity: 50 });
+            await axiosClient.post('/api/rooms', {
+                ...newRoomData,
+                ownerUsername: currentUsername
+            });
+            setShowCreateModal(false);
+            setNewRoomData({ name: '', roomCode: '' });
             fetchRooms();
         } catch (error) {
-            console.error("Lỗi tạo phòng:", error);
-            setErrorMsg(error.response?.data || 'Có lỗi xảy ra khi tạo phòng!');
+            alert(error.response?.data || "Lỗi khi tạo phòng!");
         }
     };
 
-    // 3. GỌI API: Xóa phòng
-    const handleDeleteRoom = async (id, e) => {
+    const handleDeleteRoom = async (e, roomId) => {
         e.stopPropagation();
-        if (!window.confirm('Bạn có chắc chắn muốn xóa phòng này? Toàn bộ thiết bị và nhóm bên trong sẽ bị mất.')) {
+        if (!window.confirm("Bạn có chắc chắn muốn xóa không gian này? Mọi thiết bị bên trong sẽ bị mất liên kết!")) return;
+
+        try {
+            await axiosClient.delete(`/api/rooms/${roomId}`);
+            setRooms(rooms.filter(r => r.id !== roomId));
+        } catch (error) {
+            alert("Lỗi khi xóa phòng!");
+        }
+    };
+
+    // MỞ MODAL VÀ TẠO MAC NGẪU NHIÊN
+    const handleOpenDeviceModal = () => {
+        const randomMac = MOCK_MAC_ADDRESSES[Math.floor(Math.random() * MOCK_MAC_ADDRESSES.length)];
+        setDevicePayload({ macAddress: randomMac, roomCode: '' });
+        setShowDeviceModal(true);
+    };
+
+    // Đổi MAC ngẫu nhiên khác (nếu người dùng muốn test máy khác)
+    const handleRefreshMac = () => {
+        const randomMac = MOCK_MAC_ADDRESSES[Math.floor(Math.random() * MOCK_MAC_ADDRESSES.length)];
+        setDevicePayload({ ...devicePayload, macAddress: randomMac });
+    };
+
+    const handleAddDevice = async (e) => {
+        e.preventDefault();
+        if (!devicePayload.macAddress || !devicePayload.roomCode.trim()) {
+            alert("Vui lòng nhập đầy đủ Mã phòng!");
             return;
         }
+
         try {
-            await axiosClient.delete(`/api/rooms/${id}`);
-            fetchRooms();
+            const response = await axiosClient.post('/api/devices/auto-join', devicePayload);
+            alert(response.data);
+            setShowDeviceModal(false);
         } catch (error) {
-            console.error("Lỗi xóa phòng:", error);
-            alert("Không thể xóa phòng này! Kiểm tra lại quyền của bạn.");
+            alert(error.response?.data || "Lỗi khi thêm máy! Vui lòng kiểm tra lại Mã phòng.");
         }
     };
 
-    const handleCardClick = (roomId) => {
-        navigate(`/rooms/${roomId}`);
-    };
-
-    if (loading) {
-        return <div className="flex justify-center items-center h-64 text-gray-500 font-medium">Đang đồng bộ dữ liệu không gian...</div>;
-    }
-
-    // NẾU LÀ GUEST: Chặn truy cập trang này
     if (isGuest) {
         return (
             <div className="flex flex-col items-center justify-center h-[70vh] text-center">
                 <ShieldAlert size={64} className="text-orange-400 mb-4" />
                 <h2 className="text-2xl font-bold text-gray-800">Truy cập bị từ chối</h2>
-                <p className="text-gray-500 mt-2 max-w-md">
-                    Tài khoản Khách (Guest) chỉ có thể điều khiển thiết bị cá nhân. Bạn cần đăng ký tài khoản chính thức để tạo và quản lý Không gian/Phòng máy.
-                </p>
+                <p className="text-gray-500 mt-2">Chế độ Khách không thể xem hoặc quản lý Không gian.</p>
             </div>
         );
     }
 
     return (
-        <div className="p-2">
+        <div className="p-4 h-full flex flex-col relative">
             <div className="flex justify-between items-center mb-6">
                 <div>
-                    <h2 className="text-2xl font-bold text-gray-800">Không gian quản lý</h2>
-                    <p className="text-sm text-gray-500 mt-1">Các phòng máy do bạn tạo và làm chủ.</p>
+                    <h2 className="text-2xl font-bold text-gray-800">Quản lý Không gian</h2>
+                    <p className="text-sm text-gray-500 mt-1">Danh sách các phòng máy / không gian bạn đang quản lý.</p>
                 </div>
-                <button
-                    onClick={() => setIsModalOpen(true)}
-                    className="flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg font-bold hover:bg-blue-700 transition-colors shadow-sm"
-                >
-                    <Plus size={20} />
-                    Tạo phòng mới
-                </button>
+
+                <div className="flex gap-3">
+                    <button
+                        onClick={handleOpenDeviceModal}
+                        className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition flex items-center font-bold text-sm shadow-sm"
+                    >
+                        <MonitorUp size={18} className="mr-2" /> Thêm máy
+                    </button>
+
+                    <button
+                        onClick={() => setShowCreateModal(true)}
+                        className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition flex items-center font-bold text-sm shadow-sm"
+                    >
+                        <Plus size={18} className="mr-2" /> Tạo phòng mới
+                    </button>
+                </div>
             </div>
 
-            {errorMsg && (
-                <div className="bg-red-50 text-red-600 p-4 rounded-lg mb-6 border border-red-100 font-medium">
-                    {errorMsg}
+            {loading ? (
+                <div className="flex-1 flex justify-center items-center">
+                    <p className="text-gray-400 font-medium animate-pulse">Đang tải dữ liệu...</p>
                 </div>
-            )}
-
-            {rooms.length === 0 ? (
-                <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-12 text-center">
-                    <Map size={48} className="mx-auto text-gray-300 mb-4" />
-                    <h3 className="text-lg font-bold text-gray-700">Bạn chưa quản lý phòng nào</h3>
-                    <p className="text-gray-500 mt-2 mb-6">Hãy tạo không gian đầu tiên để bắt đầu sắp xếp thiết bị và mời thành viên.</p>
-                    <button onClick={() => setIsModalOpen(true)} className="text-blue-600 font-bold hover:underline">
-                        + Tạo không gian ngay
-                    </button>
+            ) : rooms.length === 0 ? (
+                <div className="flex-1 flex flex-col justify-center items-center text-gray-400">
+                    <Map size={48} className="mb-4 text-gray-300" />
+                    <p>Bạn chưa có không gian nào. Hãy tạo một phòng mới!</p>
                 </div>
             ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                    {rooms.map((room) => (
+                    {rooms.map(room => (
                         <div
                             key={room.id}
-                            onClick={() => handleCardClick(room.id)}
-                            className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 cursor-pointer hover:shadow-md hover:border-blue-200 transition-all group relative"
+                            onClick={() => navigate(`/rooms/${room.id}`)}
+                            className="bg-white p-5 rounded-xl border border-gray-100 shadow-sm hover:shadow-md transition-shadow cursor-pointer relative group"
                         >
                             <div className="flex justify-between items-start mb-4">
-                                <h3 className="text-xl font-bold text-gray-800 group-hover:text-blue-600 transition-colors">
-                                    {room.name}
-                                </h3>
+                                <div className="bg-blue-50 p-3 rounded-lg text-blue-600">
+                                    <Map size={24} />
+                                </div>
                                 <button
-                                    onClick={(e) => handleDeleteRoom(room.id, e)}
-                                    className="text-gray-400 hover:text-red-500 transition-colors p-1"
+                                    onClick={(e) => handleDeleteRoom(e, room.id)}
+                                    className="text-gray-300 hover:text-red-500 transition-colors p-1 opacity-0 group-hover:opacity-100"
                                     title="Xóa phòng"
                                 >
                                     <Trash2 size={18} />
                                 </button>
                             </div>
-
-                            <div className="space-y-3">
-                                <div className="flex items-center text-gray-600 text-sm">
-                                    <Hash size={16} className="mr-2 text-gray-400" />
-                                    <span>Mã kết nối: <strong className="text-gray-800 bg-gray-100 px-2 py-0.5 rounded ml-1">{room.roomCode}</strong></span>
-                                </div>
-                                <div className="flex items-center text-gray-600 text-sm">
-                                    <Users size={16} className="mr-2 text-gray-400" />
-                                    <span>Sức chứa: <strong>{room.capacity} thiết bị</strong></span>
-                                </div>
-                            </div>
+                            <h3 className="font-bold text-lg text-gray-800">{room.name}</h3>
+                            <p className="text-sm text-gray-500 mt-1">Mã tham gia: <span className="font-semibold text-gray-700">{room.roomCode}</span></p>
                         </div>
                     ))}
                 </div>
             )}
 
-            {/* Modal Tạo Phòng */}
-            {isModalOpen && (
-                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-                    <div className="bg-white rounded-2xl w-full max-w-md p-6 shadow-2xl transform transition-all">
-                        <h3 className="text-xl font-bold text-gray-800 mb-4">Tạo không gian mới</h3>
-                        <form onSubmit={handleCreateRoom} className="space-y-4">
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1">Tên phòng</label>
-                                <input
-                                    type="text"
-                                    required
-                                    value={newRoom.name}
-                                    onChange={(e) => setNewRoom({...newRoom, name: e.target.value})}
-                                    className="w-full border border-gray-300 p-2 rounded-lg outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
-                                    placeholder="VD: Phòng H6-201, Team Dev..."
-                                />
-                            </div>
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1">Mã kết nối (Room Code)</label>
-                                <input
-                                    type="text"
-                                    required
-                                    value={newRoom.roomCode}
-                                    onChange={(e) => setNewRoom({...newRoom, roomCode: e.target.value})}
-                                    className="w-full border border-gray-300 p-2 rounded-lg outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 uppercase"
-                                    placeholder="VD: H6201"
-                                />
-                            </div>
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1">Sức chứa dự kiến</label>
-                                <input
-                                    type="number"
-                                    required
-                                    min="1"
-                                    value={newRoom.capacity}
-                                    onChange={(e) => setNewRoom({...newRoom, capacity: parseInt(e.target.value)})}
-                                    className="w-full border border-gray-300 p-2 rounded-lg outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
-                                />
-                            </div>
+            {/* MODAL THÊM MÁY (AUTO-JOIN) */}
+            {showDeviceModal && (
+                <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+                    <div className="bg-white rounded-xl shadow-lg w-full max-w-md overflow-hidden">
+                        <div className="flex justify-between items-center p-4 border-b border-gray-100 bg-gray-50">
+                            <h3 className="font-bold text-gray-800 flex items-center">
+                                <MonitorUp size={18} className="mr-2 text-green-600" /> Thêm máy vào phòng
+                            </h3>
+                            <button onClick={() => setShowDeviceModal(false)} className="text-gray-400 hover:text-gray-600">
+                                <X size={20} />
+                            </button>
+                        </div>
 
-                            <div className="flex gap-3 pt-4 border-t border-gray-100 mt-6">
-                                <button
-                                    type="button"
-                                    onClick={() => setIsModalOpen(false)}
-                                    className="flex-1 bg-gray-100 text-gray-700 font-bold py-2 rounded-lg hover:bg-gray-200 transition-colors"
-                                >
+                        <form onSubmit={handleAddDevice} className="p-5">
+                            <div className="mb-4">
+                                <label className="flex justify-between text-sm font-bold text-gray-700 mb-1">
+                                    <span>Địa chỉ MAC (Tự động nhận diện)</span>
+                                    <button type="button" onClick={handleRefreshMac} className="text-blue-500 hover:text-blue-700 flex items-center text-xs">
+                                        <RefreshCw size={12} className="mr-1" /> Đổi MAC Test
+                                    </button>
+                                </label>
+                                {/* INPUT MAC ADDRESS ĐÃ ĐƯỢC KHÓA CHẾT VÀ TÔ XÁM */}
+                                <input
+                                    type="text"
+                                    readOnly
+                                    value={devicePayload.macAddress}
+                                    className="w-full border border-gray-300 rounded-lg p-2.5 bg-gray-100 text-gray-500 cursor-not-allowed font-mono outline-none"
+                                />
+                                <p className="text-xs text-gray-400 mt-1 italic">*Test: Mã MAC được tạo ngẫu nhiên.</p>
+                            </div>
+                            <div className="mb-6">
+                                <label className="block text-sm font-bold text-gray-700 mb-1">Mã Phòng (Room Code)</label>
+                                <input
+                                    type="text"
+                                    required
+                                    autoFocus
+                                    placeholder="Mã phòng muốn đưa máy vào..."
+                                    value={devicePayload.roomCode}
+                                    onChange={(e) => setDevicePayload({...devicePayload, roomCode: e.target.value})}
+                                    className="w-full border border-gray-300 rounded-lg p-2.5 outline-none focus:ring-2 focus:ring-green-200 font-bold"
+                                />
+                            </div>
+                            <div className="flex justify-end gap-2">
+                                <button type="button" onClick={() => setShowDeviceModal(false)} className="px-4 py-2 text-gray-600 font-bold hover:bg-gray-100 rounded-lg">
                                     Hủy
                                 </button>
-                                <button
-                                    type="submit"
-                                    className="flex-1 bg-blue-600 text-white font-bold py-2 rounded-lg hover:bg-blue-700 transition-colors"
-                                >
-                                    Xác nhận tạo
+                                <button type="submit" className="px-4 py-2 bg-green-600 text-white font-bold hover:bg-green-700 rounded-lg">
+                                    Liên kết máy
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            )}
+
+            {/* MODAL TẠO PHÒNG CŨ */}
+            {showCreateModal && (
+                <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+                    <div className="bg-white rounded-xl shadow-lg w-full max-w-md overflow-hidden">
+                        <div className="flex justify-between items-center p-4 border-b border-gray-100 bg-gray-50">
+                            <h3 className="font-bold text-gray-800 flex items-center">
+                                <Plus size={18} className="mr-2 text-blue-600" /> Tạo Không gian mới
+                            </h3>
+                            <button onClick={() => setShowCreateModal(false)} className="text-gray-400 hover:text-gray-600">
+                                <X size={20} />
+                            </button>
+                        </div>
+
+                        <form onSubmit={handleCreateRoom} className="p-5">
+                            <div className="mb-4">
+                                <label className="block text-sm font-bold text-gray-700 mb-1">Tên Không gian</label>
+                                <input
+                                    type="text"
+                                    required
+                                    placeholder="VD: Phòng máy H6-201"
+                                    value={newRoomData.name}
+                                    onChange={(e) => setNewRoomData({...newRoomData, name: e.target.value})}
+                                    className="w-full border border-gray-300 rounded-lg p-2.5 outline-none focus:ring-2 focus:ring-blue-200"
+                                />
+                            </div>
+                            <div className="mb-6">
+                                <label className="block text-sm font-bold text-gray-700 mb-1">Mã tham gia (Room Code)</label>
+                                <input
+                                    type="text"
+                                    required
+                                    placeholder="VD: 123456"
+                                    value={newRoomData.roomCode}
+                                    onChange={(e) => setNewRoomData({...newRoomData, roomCode: e.target.value})}
+                                    className="w-full border border-gray-300 rounded-lg p-2.5 outline-none focus:ring-2 focus:ring-blue-200"
+                                />
+                            </div>
+                            <div className="flex justify-end gap-2">
+                                <button type="button" onClick={() => setShowCreateModal(false)} className="px-4 py-2 text-gray-600 font-bold hover:bg-gray-100 rounded-lg">
+                                    Hủy
+                                </button>
+                                <button type="submit" className="px-4 py-2 bg-blue-600 text-white font-bold hover:bg-blue-700 rounded-lg">
+                                    Tạo mới
                                 </button>
                             </div>
                         </form>

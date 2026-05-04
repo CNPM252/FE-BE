@@ -24,7 +24,7 @@ public class GroupController {
     @PostMapping("/rooms/{roomId}/groups")
     public ResponseEntity<?> createGroup(@PathVariable UUID roomId, @RequestBody GroupDTO groupDTO) {
         try {
-            if (groupDTO.getName() == null || groupDTO.getManagerId() == null) {
+            if (groupDTO.getName() == null || groupDTO.getManagerUsername() == null) {
                 return ResponseEntity.badRequest().body("Thiếu tên nhóm hoặc ID người quản lý!");
             }
             GroupDTO newGroup = groupService.createGroup(roomId, groupDTO);

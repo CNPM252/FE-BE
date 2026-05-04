@@ -1,7 +1,7 @@
 import React from 'react';
 import { Outlet, NavLink, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { LayoutDashboard, Settings as SettingsIcon, LogOut, User, Map } from 'lucide-react';
+import { LayoutDashboard, Settings as SettingsIcon, LogOut, User, Map, Users } from 'lucide-react'; // ĐÃ THÊM ICON USERS
 import '../styles/MainLayout.css';
 
 const MainLayout = () => {
@@ -28,10 +28,15 @@ const MainLayout = () => {
                         <span>Tổng quan</span>
                     </NavLink>
 
-                    {/* Thêm Menu Quản lý Không gian */}
                     <NavLink to="/rooms" className={({ isActive }) => isActive ? 'nav-item active' : 'nav-item'}>
                         <Map size={20} />
                         <span>Không gian</span>
+                    </NavLink>
+
+                    {/* ĐÃ THÊM MENU QUẢN LÝ NHÓM & LỚP */}
+                    <NavLink to="/groups" className={({ isActive }) => isActive ? 'nav-item active' : 'nav-item'}>
+                        <Users size={20} />
+                        <span>Nhóm & Lớp</span>
                     </NavLink>
 
                     <NavLink to="/settings" className={({ isActive }) => isActive ? 'nav-item active' : 'nav-item'}>

@@ -19,7 +19,7 @@ public class Device {
     @JoinColumn(name = "room_id")
     private Room room;
 
-    @Column(name = "is_active")
+    @Column(name = "is_active", columnDefinition = "boolean default false")
     private boolean isActive = false;
 
     @Column(name = "current_user_id")

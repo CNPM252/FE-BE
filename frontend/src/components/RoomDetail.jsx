@@ -152,14 +152,21 @@ const RoomDetail = () => {
                                             <div
                                                 draggable
                                                 onDragStart={(e) => handleDragStart(e, deviceHere.macAddress)}
-                                                className={`cursor-move flex flex-col items-center p-2 w-full h-full justify-center ${deviceHere.active ? 'text-green-600' : 'text-gray-500'}`}
+                                                className={`cursor-move flex flex-col items-center p-2 w-full h-full justify-center ${(deviceHere.active || deviceHere.isActive) ? 'text-green-600' : 'text-red-500 hover:text-red-600'}`}
                                                 title={deviceHere.currentUser ? `User: ${deviceHere.currentUser}` : 'Đang trống'}
                                             >
                                                 <Monitor size={32} />
-                                                <span className="text-[11px] font-bold mt-1 bg-white px-1 rounded border">
+                                                <span className="text-[10px] font-bold mt-1 bg-white px-1 rounded border border-gray-200 text-gray-600">
                                                     {deviceHere.macAddress}
                                                 </span>
-                                                <span className={`absolute top-2 right-2 w-2.5 h-2.5 rounded-full ${deviceHere.active ? 'bg-green-500' : 'bg-gray-300'}`}></span>
+
+                                                {/* HIỂN THỊ MSSV HOẶC CHỮ "TRỐNG" */}
+                                                <span className={`text-[11px] font-bold mt-1 px-2 rounded-full ${(deviceHere.active || deviceHere.isActive) ? 'bg-green-100 text-green-700' : 'bg-red-50 text-red-500'}`}>
+                                                    {(deviceHere.active || deviceHere.isActive) ? `👤 ${deviceHere.currentUser}` : 'Trống'}
+                                                </span>
+
+                                                {/* ĐÈN LED TÍN HIỆU GÓC TRÊN */}
+                                                <span className={`absolute top-2 right-2 w-2.5 h-2.5 rounded-full shadow-sm ${(deviceHere.active || deviceHere.isActive) ? 'bg-green-500 animate-pulse' : 'bg-red-500'}`}></span>
                                             </div>
                                         )}
                                     </div>
