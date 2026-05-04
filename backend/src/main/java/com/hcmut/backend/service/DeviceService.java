@@ -88,4 +88,9 @@ public class DeviceService {
         return deviceRepository.save(device);
     }
 
+
+    public java.util.List<Device> getDevicesByRoom(java.util.UUID roomId) {
+        return deviceRepository.findByRoom_Id(roomId);
+    }
+
 }

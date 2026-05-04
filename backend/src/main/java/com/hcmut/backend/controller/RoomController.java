@@ -2,10 +2,13 @@ package com.hcmut.backend.controller;
 
 import com.hcmut.backend.dto.RoomDTO;
 import com.hcmut.backend.service.RoomService;
+import com.hcmut.backend.repository.RoomRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.Collection;
+import java.util.Collections;
 import java.util.UUID;
 
 @RestController
@@ -15,12 +18,17 @@ import java.util.UUID;
 public class RoomController {
 
     private final RoomService roomService;
+    private final RoomRepository roomRepository;
 
-    // Lấy danh sách tất cả các phòng
+    // Lấy danh sách phòng của user
     // GET: http://localhost:8080/api/rooms
     @GetMapping
-    public ResponseEntity<?> getAllRooms() {
-        return ResponseEntity.ok(roomService.getAllRooms());
+    public ResponseEntity<?> getAllRooms(@RequestParam(required = false) String owner)
+    {
+        if (owner != null && !owner.isEmpty()) {
+            return ResponseEntity.ok(roomRepository.findByOwnerUsername(owner));
+        }
+        return ResponseEntity.ok(Collections.emptyList());
     }
 
     // Tạo phòng mới

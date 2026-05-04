@@ -11,5 +11,5 @@ import java.util.UUID;
 public interface DeviceRepository extends JpaRepository<Device, String> {
     Optional<Device> findByCurrentUser(String currentUser);
 
-    List<Device> findByRoomId(UUID roomId);
+    List<Device> findByRoom_Id(UUID roomId);
 }

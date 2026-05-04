@@ -43,6 +43,11 @@ public class DeviceController {
     /// ////////////////////////////////
 
 
+    @GetMapping("/room/{roomId}")
+    public ResponseEntity<?> getDevicesByRoom(@PathVariable java.util.UUID roomId) {
+        return ResponseEntity.ok(deviceService.getDevicesByRoom(roomId));
+    }
+
     @PostMapping("/auto-join")
     public ResponseEntity<?> autoJoin(@RequestBody DeviceJoinRequest request) {
         try {

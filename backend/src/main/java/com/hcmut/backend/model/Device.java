@@ -2,10 +2,13 @@ package com.hcmut.backend.model;
 
 import jakarta.persistence.*;
 import lombok.Data;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 
 @Data
 @Entity
 @Table(name = "devices")
+@JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
 public class Device {
 
     @Id

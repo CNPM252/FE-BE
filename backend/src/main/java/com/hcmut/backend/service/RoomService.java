@@ -31,6 +31,7 @@ public class RoomService {
         room.setName(request.getName());
         room.setRoomCode(request.getRoomCode());
         room.setCapacity(request.getCapacity());
+        room.setOwnerUsername(request.getOwnerUsername());
 
         Room savedRoom = roomRepository.save(room);
         return convertToDTO(savedRoom);
@@ -44,6 +45,7 @@ public class RoomService {
     private RoomDTO convertToDTO(Room room) {
         RoomDTO dto = new RoomDTO();
         dto.setId(room.getId());
+        dto.setOwnerUsername(room.getOwnerUsername());
         dto.setName(room.getName());
         dto.setRoomCode(room.getRoomCode());
         dto.setCapacity(room.getCapacity());
