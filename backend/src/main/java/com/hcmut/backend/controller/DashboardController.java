@@ -12,9 +12,11 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.time.DayOfWeek;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
+import java.time.temporal.TemporalAdjusters;
 import java.util.List;
 import java.util.Map;
 import java.util.HashMap;
@@ -112,6 +114,46 @@ public class DashboardController {
         stats.put("totalMinutes", totalMinutes);
 
         return ResponseEntity.ok(stats);
+    }
+
+    @GetMapping("/weekly-chart")
+    public ResponseEntity<?> getWeeklyChartData(@RequestParam String userId) {
+        LocalDate today = LocalDate.now();
+        LocalDate monday = today.with(TemporalAdjusters.previousOrSame(DayOfWeek.MONDAY));
+
+        // 1. Lấy dữ liệu từ DB
+        List<DailySummary> realData = dailySummaryRepository.findByUserIdAndSummaryDateBetweenOrderBySummaryDateAsc(
+                userId, monday, monday.plusDays(6));
+
+        // 2. Chuyển sang Map để tra cứu
+        Map<LocalDate, DailySummary> dataMap = realData.stream()
+                .collect(Collectors.toMap(DailySummary::getSummaryDate, s -> s));
+
+        // 3. Mảng tên các ngày tiếng Việt để ánh xạ
+        String[] vietnameseDays = {"T2", "T3", "T4", "T5", "T6", "T7", "CN"};
+
+        // 4. Tạo danh sách đúng cấu trúc FE: { day: '...', hours: ... }
+        List<Map<String, Object>> chartResponse = new java.util.ArrayList<>();
+        
+        for (int i = 0; i < 7; i++) {
+            LocalDate currentDate = monday.plusDays(i);
+            Map<String, Object> item = new java.util.HashMap<>();
+            
+            item.put("day", vietnameseDays[i]); // Gán T2, T3...
+
+            if (dataMap.containsKey(currentDate)) {
+                int minutes = dataMap.get(currentDate).getTotalMinutesSeated();
+                // Chuyển phút sang giờ, làm tròn 1 chữ số thập phân
+                double hours = Math.round((minutes / 60.0) * 10.0) / 10.0;
+                item.put("hours", hours);
+            } else {
+                item.put("hours", 0);
+            }
+            
+            chartResponse.add(item);
+        }
+
+        return ResponseEntity.ok(chartResponse);
     }
 
 }
