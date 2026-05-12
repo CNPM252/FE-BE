@@ -1,9 +1,11 @@
 package com.hcmut.backend.controller;
 
+import com.hcmut.backend.model.User;
 import com.hcmut.backend.model.DailySummary;
 import com.hcmut.backend.repository.DailySummaryRepository;
 import com.hcmut.backend.repository.HistoryLogRepository;
 import com.hcmut.backend.repository.UserConfigRepository;
+import com.hcmut.backend.repository.UserRepository;
 import com.hcmut.backend.model.UserConfig;
 import com.hcmut.backend.model.HistoryLog;
 
@@ -32,6 +34,7 @@ public class DashboardController {
     private final DailySummaryRepository dailySummaryRepository;
     private final UserConfigRepository userConfigRepository;
     private final HistoryLogRepository historyLogRepository;
+    private final UserRepository userRepository;
 
     @GetMapping("/heatmap")
     public ResponseEntity<?> getHeatmapData(
@@ -41,12 +44,14 @@ public class DashboardController {
         if (userId.startsWith("guest_")) {
             return ResponseEntity.ok(List.of());
         }
+        User user = userRepository.findByUsername(userId)
+            .orElseThrow(() -> new RuntimeException("Không tìm thấy tài khoản!"));
 
         int targetYear = (year != null)? year : LocalDate.now().getYear();
         LocalDate startDate = LocalDate.of(targetYear, 1, 1);
         LocalDate endDate = LocalDate.of(targetYear, 12, 31);
 
-        List<DailySummary> summaries = dailySummaryRepository.findByUserIdAndSummaryDateBetweenOrderBySummaryDateAsc(userId, startDate, endDate);
+        List<DailySummary> summaries = dailySummaryRepository.findByUserIdAndSummaryDateBetweenOrderBySummaryDateAsc(user.getId().toString(), startDate, endDate);
 
         List<Map<String, Object>> heatmapResponse = summaries.stream().map(summary -> {
             Map<String, Object> map = new java.util.HashMap<>();
@@ -61,10 +66,12 @@ public class DashboardController {
 
     @GetMapping("/today")
     public ResponseEntity<?> getTodayStats(@RequestParam String userId) {
+        User user = userRepository.findByUsername(userId)
+            .orElseThrow(() -> new RuntimeException("Không tìm thấy tài khoản!"));
         LocalDateTime startOfDay = LocalDate.now().atStartOfDay();
         LocalDateTime now = LocalDateTime.now();
 
-        List<HistoryLog> logs = historyLogRepository.findByCurrentUserIdAndRecordedAtBetween(userId, startOfDay, now);
+        List<HistoryLog> logs = historyLogRepository.findByCurrentUserIdAndRecordedAtBetween(user.getId().toString(), startOfDay, now);
 
 
         UserConfig config = null;
@@ -118,12 +125,14 @@ public class DashboardController {
 
     @GetMapping("/weekly-chart")
     public ResponseEntity<?> getWeeklyChartData(@RequestParam String userId) {
+        User user = userRepository.findByUsername(userId)
+            .orElseThrow(() -> new RuntimeException("Không tìm thấy tài khoản!"));
         LocalDate today = LocalDate.now();
         LocalDate monday = today.with(TemporalAdjusters.previousOrSame(DayOfWeek.MONDAY));
 
         // 1. Lấy dữ liệu từ DB
         List<DailySummary> realData = dailySummaryRepository.findByUserIdAndSummaryDateBetweenOrderBySummaryDateAsc(
-                userId, monday, monday.plusDays(6));
+                user.getId().toString(), monday, monday.plusDays(6));
 
         // 2. Chuyển sang Map để tra cứu
         Map<LocalDate, DailySummary> dataMap = realData.stream()
