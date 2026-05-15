@@ -3,6 +3,7 @@ import { Outlet, NavLink, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { LayoutDashboard, Settings as SettingsIcon, LogOut, User, Map, Users } from 'lucide-react'; // ĐÃ THÊM ICON USERS
 import '../styles/MainLayout.css';
+import logo from '../assets/smartWorkstation.svg';
 
 const MainLayout = () => {
     const { user, isGuest, logout } = useAuth();
@@ -17,10 +18,19 @@ const MainLayout = () => {
         <div className="layout-container">
             {/* Thanh Sidebar bên trái */}
             <aside className="sidebar">
-                <div className="sidebar-header">
-                    <h2>BKWorkspace</h2>
+                <div
+                    className="sidebar-header"
+                    style={{ display: "flex", alignItems: "center", gap: "10px" }}
+                >
+                    <img
+                        src={logo}
+                        alt="Page logo"
+                        style={{ width: "30px", height: "30px" }}
+                    />
+                    <h2 style={{ margin: 0 }}>BKWorkspace</h2>
                     <span className="badge">{isGuest ? 'Guest Mode' : 'Workspace'}</span>
                 </div>
+
 
                 <nav className="sidebar-nav">
                     <NavLink to="/dashboard" className={({ isActive }) => isActive ? 'nav-item active' : 'nav-item'}>

@@ -27,7 +27,7 @@ public class HistoryLogSyncTask {
     private final ObjectMapper objectMapper = new ObjectMapper();
 
     // Chạy mỗi 1 phút một lần để test (Sau này deploy thật thì đổi thành 900000 = 15 phút)
-    @Scheduled(fixedRate = 600000)
+    @Scheduled(fixedRate = 900000)
     public void syncLogsToDatabase() {
         String queueName = "history_log_queue";
 

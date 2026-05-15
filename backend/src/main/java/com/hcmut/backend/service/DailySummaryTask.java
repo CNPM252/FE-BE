@@ -23,7 +23,8 @@ public class DailySummaryTask {
 
     // Chạy vào lúc 00:05 sáng mỗi ngày (Giờ hệ thống)
     // Cấu trúc Cron: Giây - Phút - Giờ - Ngày - Tháng - Thứ
-    @Scheduled(fixedRate = 300000)
+//    @Scheduled(fixedRate = 300000)
+    @Scheduled(cron = "0 0 0 * * ?")
     @Transactional
     public void generateDailySummaries() {
         System.out.println("=== BẮT ĐẦU CHẠY BATCH JOB TỔNG HỢP DỮ LIỆU NGÀY HÔM QUA ===");

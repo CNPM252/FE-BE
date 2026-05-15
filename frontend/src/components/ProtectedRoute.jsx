@@ -1,15 +1,14 @@
+// frontend/src/components/ProtectedRoute.jsx
 import { Navigate, Outlet } from 'react-router-dom';
-import { useAuth } from '../context/AuthContext'; // Đảm bảo đường dẫn đúng
+import { useAuth } from '../context/AuthContext';
 
 const ProtectedRoute = () => {
-  const { user } = useAuth();
+  const { user, isGuest } = useAuth();
 
-  // Nếu chưa đăng nhập, đá về trang login
-  if (!user) {
+  if (!user && !isGuest) {
     return <Navigate to="/login" replace />;
   }
 
-  // Nếu đã đăng nhập, cho phép truy cập các route con thông qua Outlet
   return <Outlet />;
 };
 
