@@ -19,14 +19,15 @@ const Dashboard = () => {
   });
   const [heatmapData, setHeatmapData] = useState([]);
   const [message, setMessage] = useState('');
+  const [chartData, setChartData] = useState([])
 
   // Mock data biểu đồ
-  const chartData = [
-    { day: 'T2', hours: 3 }, { day: 'T3', hours: 4.5 },
-    { day: 'T4', hours: 2 }, { day: 'T5', hours: 5 },
-    { day: 'T6', hours: 4.2 }, { day: 'T7', hours: 1 },
-    { day: 'CN', hours: 0 },
-  ];
+  // const chartData = [
+  //   { day: 'T2', hours: 3 }, { day: 'T3', hours: 4.5 },
+  //   { day: 'T4', hours: 2 }, { day: 'T5', hours: 5 },
+  //   { day: 'T6', hours: 4.2 }, { day: 'T7', hours: 1 },
+  //   { day: 'CN', hours: 0 },
+  // ];
 
   const currentUserId = isGuest
       ? sessionStorage.getItem('guestId')
@@ -67,6 +68,14 @@ const Dashboard = () => {
           if (heatmapRes.data) {
             setHeatmapData(heatmapRes.data);
           }
+        }
+        //3 fetch weekly data
+        const weekly = await axiosClient.get('api/dashboard/weekly-chart', {
+          params: { userId: currentUserId }
+        })
+
+        if (weekly){
+          setChartData(weekly.data);
         }
       } catch (error) {
         console.error("Lỗi khi tải dữ liệu Dashboard:", error);

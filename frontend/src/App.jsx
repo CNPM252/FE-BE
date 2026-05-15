@@ -10,6 +10,7 @@ import './styles/global.css';
 import Rooms from "./components/Rooms.jsx";
 import RoomDetail from "./components/RoomDetail";
 import Groups from "./components/Group.jsx";
+import ProtectedRoute from './components/ProtectedRoute';
 
 function App() {
   return (
@@ -18,18 +19,20 @@ function App() {
           <Routes>
             <Route path="/login" element={<Auth />} />
 
-              <Route element={<MainLayout />}>
-                  <Route path="/dashboard" element={<Dashboard />} />
-                  <Route path="/settings" element={<Settings />} />
-                  <Route path="/rooms" element={<Rooms />} />
-                  <Route path="/rooms/:roomId" element={<RoomDetail />} />
-                  <Route path="/groups" element={<Groups />} />
+              <Route element = {<ProtectedRoute />}>
+                <Route element={<MainLayout />}>
+                    <Route path="/dashboard" element={<Dashboard />} />
+                    <Route path="/settings" element={<Settings />} />
+                    <Route path="/rooms" element={<Rooms />} />
+                    <Route path="/rooms/:roomId" element={<RoomDetail />} />
+                    <Route path="/groups" element={<Groups />} />
 
-                  <Route path="/" element={<Navigate to="/dashboard" replace />} />
+                    <Route path="*" element={<Navigate to="/dashboard" replace />} />
+                </Route>
               </Route>
 
 
-            <Route path="*" element={<Navigate to="/login" replace />} />
+            <Route path="/" element={<Navigate to="/login" replace />} />
           </Routes>
         </Router>
       </AuthProvider>
