@@ -21,7 +21,6 @@ public class RoomController {
     private final RoomRepository roomRepository;
 
     // Lấy danh sách phòng của user
-    // GET: http://localhost:8080/api/rooms
     @GetMapping
     public ResponseEntity<?> getAllRooms(@RequestParam(required = false) String owner)
     {
@@ -32,7 +31,6 @@ public class RoomController {
     }
 
     // Tạo phòng mới
-    // POST: http://localhost:8080/api/rooms
     @PostMapping
     public ResponseEntity<?> createRoom(@RequestBody RoomDTO roomDTO) {
         try {
@@ -44,7 +42,6 @@ public class RoomController {
     }
 
     // Xóa phòng
-    // DELETE: http://localhost:8080/api/rooms/{id}
     @DeleteMapping("/{id}")
     public ResponseEntity<?> deleteRoom(@PathVariable UUID id) {
         roomService.deleteRoom(id);
